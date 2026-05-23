@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "stream_shield",
+  "version": "${version}",
+  "name": "Stream Shield",
+  "description": "Hides chat and F3 coordinates from the game window for streamers; mirrors them to a separate desktop window.",
+  "authors": [
+    "KingTux"
+  ],
+  "license": "Apache-2.0",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      {
+        "adapter": "kotlin",
+        "value": "dev.kingtux.streamshield.StreamShield"
+      }
+    ]
+  },
+  "contact": {
+    "issues": "https://github.com/wyatt-herkamp/stream_shield/issues",
+    "sources": "https://github.com/wyatt-herkamp/stream_shield"
+  },
+  "mixins": [
+    "stream_shield.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": "${fabric_loader_range}",
+    "minecraft": "${minecraft_range}",
+    "fabric-api": "*",
+    "fabric-language-kotlin": ">=${fabric_kotlin_version}"
+  },
+  "custom": {
+    "modmenu:clientsideOnly": true
+  }
+}

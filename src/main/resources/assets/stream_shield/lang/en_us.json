@@ -1,0 +1,6 @@
+{
+  "key.category.stream_shield.main": "Stream Shield",
+  "key.stream_shield.toggle": "Toggle obfuscation",
+  "stream_shield.toggled.on": "Stream Shield enabled",
+  "stream_shield.toggled.off": "Stream Shield disabled"
+}

@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "dev.kingtux.streamshield.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "ChatComponentMixin",
+    "ChatScreenMixin",
+    "DebugScreenOverlayMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
