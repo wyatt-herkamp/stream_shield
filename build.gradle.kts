@@ -10,6 +10,9 @@ version = "${property("mod_version")}+mc.${property("minecraft_version")}"
 
 repositories {
     mavenCentral()
+    maven("https://maven.terraformersmc.com/releases/") {
+        name = "Terraformers"
+    }
 }
 
 loom {
@@ -26,6 +29,10 @@ dependencies {
     implementation("net.fabricmc:fabric-language-kotlin:${property("fabric_kotlin_version")}")
     implementation("net.fabricmc.fabric-api:fabric-api:${property("fabric_api_version")}")
     implementation(kotlin("stdlib-jdk8"))
+
+    // ModMenu — optional at runtime (see "suggests" in fabric.mod.json). This is a non-obfuscated
+    // (named) environment, so mod deps are consumed directly like the fabric-api dependency above.
+    implementation("com.terraformersmc:modmenu:${property("modmenu_version")}")
 }
 
 kotlin {

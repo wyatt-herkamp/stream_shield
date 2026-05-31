@@ -15,6 +15,12 @@
         "adapter": "kotlin",
         "value": "dev.kingtux.streamshield.StreamShield"
       }
+    ],
+    "modmenu": [
+      {
+        "adapter": "kotlin",
+        "value": "dev.kingtux.streamshield.modmenu.ModMenuIntegration"
+      }
     ]
   },
   "contact": {
@@ -29,6 +35,9 @@
     "minecraft": "${minecraft_range}",
     "fabric-api": "*",
     "fabric-language-kotlin": ">=${fabric_kotlin_version}"
+  },
+  "suggests": {
+    "modmenu": "*"
   },
   "custom": {
     "modmenu:clientsideOnly": true

@@ -105,6 +105,8 @@ object SecondaryWindow {
     }
 
     private fun buildFrame() {
+        logAvailableDisplays()
+
         val f = JFrame("Stream Shield — private view").apply {
             defaultCloseOperation = WindowConstants.HIDE_ON_CLOSE
             layout = BorderLayout()
@@ -176,11 +178,12 @@ object SecondaryWindow {
         f.add(south, BorderLayout.SOUTH)
 
         val bounds = ConfigManager.config.windowBounds
-        if (bounds != null) {
+        val width = bounds?.width ?: 560
+        val height = bounds?.height ?: 520
+        if (bounds != null && isVisibleOnAnyScreen(bounds)) {
             f.setBounds(bounds.x, bounds.y, bounds.width, bounds.height)
         } else {
-            f.setSize(560, 520)
-            f.setLocationRelativeTo(null)
+            centerOnDevice(f, preferredDevice(), width, height)
         }
 
         f.addWindowListener(object : WindowAdapter() {
@@ -202,6 +205,44 @@ object SecondaryWindow {
     private fun valueLabel(font: Font) = JLabel("—").apply {
         this.font = font
         foreground = FG
+    }
+
+    private fun preferredDevice(): java.awt.GraphicsDevice {
+        val env = GraphicsEnvironment.getLocalGraphicsEnvironment()
+        val devices = env.screenDevices
+        val idx = ConfigManager.config.displayIndex
+        if (idx != null && idx !in devices.indices) {
+            StreamShield.LOGGER.warn(
+                "Configured displayIndex={} is out of range (0..{}); using primary display",
+                idx, devices.size - 1,
+            )
+        }
+        return if (idx != null && idx in devices.indices) devices[idx] else env.defaultScreenDevice
+    }
+
+    private fun centerOnDevice(f: JFrame, device: java.awt.GraphicsDevice, width: Int, height: Int) {
+        val b = device.defaultConfiguration.bounds
+        val x = b.x + (b.width - width) / 2
+        val y = b.y + (b.height - height) / 2
+        f.setBounds(x, y, width, height)
+    }
+
+    private fun isVisibleOnAnyScreen(bounds: WindowBounds): Boolean {
+        val rect = java.awt.Rectangle(bounds.x, bounds.y, bounds.width, bounds.height)
+        return GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices.any {
+            it.defaultConfiguration.bounds.intersects(rect)
+        }
+    }
+
+    private fun logAvailableDisplays() {
+        val devices = GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices
+        StreamShield.LOGGER.info("Available displays ({} found):", devices.size)
+        devices.forEachIndexed { i, d ->
+            val b = d.defaultConfiguration.bounds
+            StreamShield.LOGGER.info(
+                "  [{}] id={} {}x{} @ ({},{})", i, d.iDstring, b.width, b.height, b.x, b.y,
+            )
+        }
     }
 
     fun setVisible(visible: Boolean) {
@@ -249,6 +290,31 @@ object SecondaryWindow {
             coordsZ?.text = "%.2f".format(snapshot.z)
             facingLabel?.text = "${snapshot.facing}  (yaw %.1f / pitch %.1f)".format(snapshot.yaw, snapshot.pitch)
             dimensionLabel?.text = snapshot.dimension
+        }
+    }
+
+    /** Number of monitors AWT currently sees. Safe to call from any thread. */
+    fun displayCount(): Int =
+        GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices.size
+
+    /** Human-readable label for a monitor index, e.g. "Display 1 — 1920×1080". */
+    fun displayDescription(index: Int): String {
+        val devices = GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices
+        val b = devices.getOrNull(index)?.defaultConfiguration?.bounds ?: return "Display $index"
+        return "Display $index — ${b.width}×${b.height}"
+    }
+
+    /**
+     * Explicitly recenter the existing window on the monitor configured via [ConfigManager]
+     * ([dev.kingtux.streamshield.config.Config.displayIndex]). Used when the user changes the
+     * display in the settings screen; overrides any saved bounds because it is a direct action.
+     */
+    fun moveToConfiguredDisplay() {
+        SwingUtilities.invokeLater {
+            val f = frame ?: return@invokeLater
+            centerOnDevice(f, preferredDevice(), f.width, f.height)
+            f.toFront()
+            persistBounds()
         }
     }
 

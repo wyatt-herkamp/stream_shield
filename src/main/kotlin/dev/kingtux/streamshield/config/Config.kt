@@ -16,4 +16,5 @@ data class Config(
     val showSecondaryWindowWhenEnabled: Boolean = true,
     val maskCharacter: String = "•",
     val windowBounds: WindowBounds? = null,
+    val displayIndex: Int? = null,
 )
