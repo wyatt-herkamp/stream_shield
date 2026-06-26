@@ -16,7 +16,7 @@ import net.minecraft.network.chat.Component
  * ModMenu config screen for Stream Shield. Built entirely from layout-managed widgets so it does
  * not need to override the (reworked) render pipeline in this Minecraft version.
  */
-class ConfigScreen(private val parent: Screen?) :
+class ConfigScreen(private val parent: Screen) :
     Screen(Component.literal("Stream Shield Settings")) {
 
     private val cfg = ConfigManager.config
@@ -86,7 +86,7 @@ class ConfigScreen(private val parent: Screen?) :
 
     override fun onClose() {
         save()
-        minecraft.setScreen(parent)
+        minecraft.setScreenAndShow(parent)
     }
 
     private fun save() {
