@@ -41,30 +41,37 @@ object SecondaryWindow {
     fun init() {
         if (initialized) return
 
-        // Belt-and-suspenders: clear the headless flag in case the JVM was launched with it.
-        // Must happen before any AWT/Swing class is touched.
+        // Belt-and-suspenders in case AwtHeadlessGuard never ran; harmless once
+        // GraphicsEnvironment has cached its answer (see AwtHeadlessGuard).
         System.setProperty("java.awt.headless", "false")
 
         if (GraphicsEnvironment.isHeadless()) {
-            // GraphicsEnvironment caches its headless decision on first access. If something
-            // earlier in the JVM lifecycle initialized AWT before we cleared the property,
-            // try to flip the cached flag via reflection.
+            // Something read the flag while Minecraft still had java.awt.headless=true, so
+            // the cached decision is stuck. Reflection is the only way back out, and it
+            // needs --add-opens to get at a java.desktop internal.
             if (!forceClearHeadlessCache()) {
                 StreamShield.LOGGER.warn(
-                    "AWT already initialized in headless mode and could not be reset; " +
-                        "secondary window disabled. Try removing -Djava.awt.headless=true from JVM args.",
+                    "AWT is stuck in headless mode, so the secondary window is disabled. " +
+                        "Add --add-opens=java.desktop/java.awt=ALL-UNNAMED to the JVM arguments " +
+                        "to let Stream Shield undo it. (On Linux, also check that DISPLAY is set — " +
+                        "Swing needs X11 or XWayland.)",
                 )
                 return
             }
         }
 
         initialized = true
-        SwingUtilities.invokeLater {
-            try {
-                buildFrame()
-            } catch (e: Throwable) {
-                StreamShield.LOGGER.error("Failed to build secondary window", e)
+        try {
+            SwingUtilities.invokeLater {
+                try {
+                    buildFrame()
+                } catch (e: Throwable) {
+                    StreamShield.LOGGER.error("Failed to build secondary window", e)
+                }
             }
+        } catch (e: Throwable) {
+            // e.g. AWTError when AWT is non-headless but cannot reach the display server.
+            StreamShield.LOGGER.error("AWT is unavailable; secondary window disabled", e)
         }
     }
 
@@ -75,7 +82,7 @@ object SecondaryWindow {
         StreamShield.LOGGER.info("Forced GraphicsEnvironment.headless = false via reflection")
         !GraphicsEnvironment.isHeadless()
     } catch (e: Throwable) {
-        StreamShield.LOGGER.warn("Could not reset GraphicsEnvironment.headless", e)
+        StreamShield.LOGGER.debug("Could not reset GraphicsEnvironment.headless", e)
         false
     }
 
@@ -293,14 +300,25 @@ object SecondaryWindow {
         }
     }
 
-    /** Number of monitors AWT currently sees. Safe to call from any thread. */
-    fun displayCount(): Int =
+    /**
+     * Number of monitors AWT currently sees, or 0 if AWT is unusable. Safe to call from
+     * any thread; the settings screen calls this even when the window never opened.
+     */
+    fun displayCount(): Int = try {
         GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices.size
+    } catch (e: Throwable) {
+        StreamShield.LOGGER.debug("Could not query displays", e)
+        0
+    }
 
     /** Human-readable label for a monitor index, e.g. "Display 1 — 1920×1080". */
     fun displayDescription(index: Int): String {
-        val devices = GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices
-        val b = devices.getOrNull(index)?.defaultConfiguration?.bounds ?: return "Display $index"
+        val b = try {
+            GraphicsEnvironment.getLocalGraphicsEnvironment()
+                .screenDevices.getOrNull(index)?.defaultConfiguration?.bounds
+        } catch (e: Throwable) {
+            null
+        } ?: return "Display $index"
         return "Display $index — ${b.width}×${b.height}"
     }
 

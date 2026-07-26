@@ -10,6 +10,12 @@
   "license": "Apache-2.0",
   "environment": "client",
   "entrypoints": {
+    "preLaunch": [
+      {
+        "adapter": "kotlin",
+        "value": "dev.kingtux.streamshield.window.AwtHeadlessGuard"
+      }
+    ],
     "client": [
       {
         "adapter": "kotlin",

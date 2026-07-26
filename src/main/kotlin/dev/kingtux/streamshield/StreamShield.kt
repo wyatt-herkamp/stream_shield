@@ -16,9 +16,10 @@ object StreamShield : ClientModInitializer {
     val LOGGER: Logger = LogManager.getLogger("StreamShield")
 
     override fun onInitializeClient() {
-        // Minecraft's launch arguments commonly include -Djava.awt.headless=true,
-        // which prevents Swing windows from opening. Clear it before any AWT class
-        // is touched. This is safe in a desktop client environment.
+        // Minecraft's Main sets java.awt.headless=true in a static initializer, which
+        // would stop Swing windows from opening. AwtHeadlessGuard already settled the
+        // question before that ran; this only matters if the preLaunch entrypoint was
+        // skipped, and is safe in a desktop client environment either way.
         System.setProperty("java.awt.headless", "false")
 
         Keybinds.register()

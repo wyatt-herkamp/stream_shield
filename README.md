@@ -60,6 +60,21 @@ Config lives at `<minecraft>/stream_shield.json` and is generated on first launc
 | `maskCharacter` | Character drawn in the chat input in place of each typed character. |
 | `windowBounds` | Last saved position/size of the private view (written automatically). |
 
+## Troubleshooting
+
+**"AWT is stuck in headless mode" / the private view never opens.** Minecraft sets
+`java.awt.headless=true` before the game starts, which normally blocks Swing windows.
+Stream Shield undoes this before Minecraft's launch code runs, but if another mod reads
+AWT's headless flag first the decision gets cached and can only be reverted with an extra
+JVM argument:
+
+```
+--add-opens=java.desktop/java.awt=ALL-UNNAMED
+```
+
+On Linux, Swing needs X11: check that `DISPLAY` is set. A Wayland session without
+XWayland cannot host the private-view window at all.
+
 ## Building from source
 
 ```sh
